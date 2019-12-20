@@ -1,12 +1,12 @@
 package middleware
 
 import (
+	"github.com/ruanlianjun/simpleGo/simple"
 	"log"
-	"simple_frameworker/simple"
 	"time"
 )
 
-func StartLog() simple.HandleFunc {
+func StartLog() simple.HandleFunc{
 	return func(c *simple.Context) {
 		t := time.Now()
 		c.Next()
