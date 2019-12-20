@@ -1,3 +1,5 @@
+####Use
+```go
 package main
 
 import (
@@ -32,3 +34,5 @@ func main() {
 
 	log.Panic(r.Run(":9098"))
 }
+
+```

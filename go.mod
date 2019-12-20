@@ -1,3 +1,3 @@
-module simple_frameworker
+module simpleGo
 
 go 1.12
