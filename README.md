@@ -1,4 +1,7 @@
 #### Use
+
+`go get github.com/ruanlianjun/simpleGo`
+
 ```go
 package main
 
