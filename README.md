@@ -21,7 +21,7 @@ func main() {
 		admin.GET("login", func(c *simple.Context) {
 			c.String(http.StatusOK,
 				"%s",
-				"v1 v2 admin demo")
+				"v1 v2 admin login")
 		})
 	}
 
