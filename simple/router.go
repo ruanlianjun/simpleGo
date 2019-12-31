@@ -1,6 +1,7 @@
 package simple
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -8,6 +9,7 @@ import (
 type router struct {
 	roots    map[string]*node
 	handlers map[string]HandleFunc
+
 }
 
 func NewRouter() *router {
@@ -91,14 +93,16 @@ func (r *router) handle(c *Context) {
 		c.Params = params
 		key := c.Method + "-" + n.pattern
 
-		c.handlers = append(c.handlers, r.handlers[key])
-
-		//r.handlers[key](c)
-	} else {
-		c.handlers = append(c.handlers, func(c *Context) {
-			c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		//c.handlers = append(c.handlers, r.handlers[key])
+		new(Pipeline).Send(c).Through(c.middlewares).Then(func(c *Context) {
+			fmt.Println(c.Request.URL)
 		})
+		r.handlers[key](c)
+	} else {
+		//c.handlers = append(c.handlers, func(c *Context) {
+		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		//})
 	}
 
-	c.Next()
+	//c.Next()
 }

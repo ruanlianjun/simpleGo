@@ -18,8 +18,10 @@ type Context struct {
 	StatusCode int
 
 	//middleware
-	handlers []HandleFunc
-	index    int
+	//handlers []HandleFunc
+	middlewares []MiddlewareHandle
+
+	//index    int
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -29,17 +31,17 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		Method:     r.Method,
 		Path:       r.URL.Path,
 		StatusCode: 0,
-		index:      -1,
+		//index:      -1,
 	}
 }
 
-func (c *Context) Next() {
-	c.index++
-	s := len(c.handlers)
-	for ; c.index < s; c.index++ {
-		c.handlers[c.index](c)
-	}
-}
+//func (c *Context) Next() {
+//	c.index++
+//	s := len(c.handlers)
+//	for ; c.index < s; c.index++ {
+//		c.handlers[c.index](c)
+//	}
+//}
 
 func (c *Context) PostForm(key string) string {
 	return c.Request.PostForm.Get(key)
