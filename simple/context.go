@@ -3,6 +3,7 @@ package simple
 import (
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -18,10 +19,9 @@ type Context struct {
 	StatusCode int
 
 	//middleware
-	//handlers []HandleFunc
-	middlewares []MiddlewareHandle
+	handlers []MiddlewareHandle
 
-	//index    int
+	index int
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -31,17 +31,9 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		Method:     r.Method,
 		Path:       r.URL.Path,
 		StatusCode: 0,
-		//index:      -1,
+		index:      -1,
 	}
 }
-
-//func (c *Context) Next() {
-//	c.index++
-//	s := len(c.handlers)
-//	for ; c.index < s; c.index++ {
-//		c.handlers[c.index](c)
-//	}
-//}
 
 func (c *Context) PostForm(key string) string {
 	return c.Request.PostForm.Get(key)
@@ -88,4 +80,26 @@ func (c *Context) HTML(code int, html string) {
 func (c *Context) Data(code int, data []byte) {
 	c.Status(code)
 	c.Writer.Write(data)
+}
+func (c *Context) File(key string) (multipart.File, *multipart.FileHeader, error) {
+	return c.Request.FormFile(key)
+}
+
+func (c *Context) GetWithDefault(key, def string) string {
+	if c.Request.FormValue(key) == "" {
+		return def
+	}
+	return c.Request.FormValue(key)
+}
+
+func (c *Context) PostWithDefault(key, def string) string {
+	if c.Request.PostFormValue(key) == "" {
+		return def
+	}
+	return c.Request.PostFormValue(key)
+}
+
+func (c *Context) Redirect(path string) {
+	url := c.Request.URL.Host + path
+	http.Redirect(c.Writer, c.Request, url, http.StatusFound)
 }

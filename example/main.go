@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/ruanlianjun/simpleGo/simple"
 	"log"
 )
@@ -9,30 +8,27 @@ import (
 func main() {
 	router := simple.New()
 
-	//r := router.Group("/test").Middleware(func(c *simple.Context, next func(c *simple.Context)) {
-	//	fmt.Println(1)
-	//	next(c)
-	//})
-	router.Middleware(func(context *simple.Context, next func(context *simple.Context)) {
-		fmt.Println(1)
-		next(context)
-	}).Middleware(func(context *simple.Context, next func(context *simple.Context)) {
-		fmt.Println(1)
-		next(context)
-	}).GET("/test", func(c *simple.Context) {
-		c.Writer.Write([]byte("test"))
+	v1 := router.Group("/v1")
+
+	v1.Middleware(func(c *simple.Context, next func(c *simple.Context)) {
+		c.Writer.Write([]byte("v1 middleware\n"))
+		next(c)
 	})
 
-	router.Middleware(func(c *simple.Context, next func(c *simple.Context)) {
-		fmt.Println(222)
+	v1.GET("/test", func(c *simple.Context) {
+		c.Writer.Write([]byte("v1 test"))
+	})
+
+	v2 := router.Group("/v2")
+
+	v2.Middleware(func(c *simple.Context, next func(c *simple.Context)) {
 		next(c)
-	}).GET("/demo", func(c *simple.Context) {
-		c.Writer.Write([]byte("demo"))
+		c.Writer.Write([]byte("v2 middleware\n"))
+	})
+
+	v2.GET("/test", func(c *simple.Context) {
+		c.Writer.Write([]byte("v2 test\n"))
 	})
 
 	log.Panic(router.Run(":9098"))
-}
-
-func demo(c *simple.Context) {
-	fmt.Println("simple demo")
 }

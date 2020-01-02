@@ -1,97 +1,82 @@
 package simple
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
 
+type RouterGroup struct {
+	prefix      string
+	engine      *Engine
+	parent      *RouterGroup
+	middlewares []MiddlewareHandle
+}
+
+type Engine struct {
+	router *router
+	*RouterGroup
+	groups []*RouterGroup
+}
+
 type HandleFunc func(c *Context)
+type MiddlewareHandle func(c *Context, next func(c *Context))
 
-type (
-	RouterGroup struct {
-		prefix string
-		//middlewares []HandleFunc
-		parent      *RouterGroup
-		simple      *Simple
-		middlewares []MiddlewareHandle
-	}
-	Simple struct {
-		router *router
-		*RouterGroup
-		groups []*RouterGroup
-	}
-)
-
-func New() *Simple {
-	Simple := &Simple{router: NewRouter()}
-	Simple.RouterGroup = &RouterGroup{simple: Simple}
-	Simple.groups = []*RouterGroup{Simple.RouterGroup}
-
-	return Simple
+func New() *Engine {
+	engine := &Engine{router: NewRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
 }
 
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
-	Simple := group.simple
+	engine := group.engine
+
+	prefix = strings.Trim(prefix, "/")
 	newGroup := &RouterGroup{
 		prefix: group.prefix + "/" + prefix,
+		engine: engine,
 		parent: group,
-		simple: Simple,
 	}
-	Simple.groups = append(Simple.groups, newGroup)
-
+	engine.groups = append(engine.groups, newGroup)
 	return newGroup
 }
 
-//func (group *RouterGroup) Use(middlewares ...HandleFunc) {
-//	group.middlewares = append(group.middlewares, middlewares...)
-//}
 
 func (group *RouterGroup) addRoute(method string,
 	comp string,
-	handle HandleFunc) string {
-	pattern := group.prefix + "/" + comp
-	group.simple.router.addRoute(method, pattern, handle)
-	return pattern
+	handle HandleFunc) {
+	pattern := group.prefix + comp
+
+	group.engine.router.addRoute(method, pattern, handle)
 }
 
-func (group *RouterGroup) GET(patter string, handle HandleFunc) *RouterGroup {
+func (group *RouterGroup) GET(patter string, handle HandleFunc) {
 	group.addRoute("GET", patter, handle)
-	return group
 }
 
-func (group *RouterGroup) POST(patter string, handle HandleFunc) *RouterGroup {
+func (group *RouterGroup) POST(patter string, handle HandleFunc) {
 	group.addRoute("POST", patter, handle)
-	return group
 }
 
 func (group *RouterGroup) Middleware(middleware MiddlewareHandle) *RouterGroup {
 	group.middlewares = append(group.middlewares, middleware)
-
 	return group
 }
 
-func (h *Simple) Run(addr string) (error error) {
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	log.Println(h.prefix)
-
-	return http.ListenAndServe(addr, h)
+func (engine *Engine) Run(addr string) (error error) {
+	return http.ListenAndServe(addr, engine)
 }
 
-func (h *Simple) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (engine *Engine) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	var middlewares []MiddlewareHandle
 
-	for _, group := range h.groups {
-		if strings.HasPrefix(r.URL.Path, group.prefix) {
-			fmt.Printf("host=%s middleware=%v group_prefix=%s\n",
-				r.URL.Path, group.middlewares, group.prefix)
+	for _, group := range engine.groups {
+		if strings.HasPrefix(rq.URL.Path, group.prefix) {
 			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
 
-	context := NewContext(w, r)
-	context.middlewares = middlewares
-
-	h.router.handle(context)
+	context := NewContext(w, rq)
+	context.handlers = middlewares
+	engine.router.handle(context)
 }

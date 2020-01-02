@@ -1,8 +1,5 @@
 package simple
 
-type MiddlewareHandle func(c *Context,
-	next func(c *Context))
-
 type Pipeline struct {
 	send    *Context
 	through []MiddlewareHandle

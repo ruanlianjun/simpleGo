@@ -1,7 +1,6 @@
 package simple
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -9,7 +8,6 @@ import (
 type router struct {
 	roots    map[string]*node
 	handlers map[string]HandleFunc
-
 }
 
 func NewRouter() *router {
@@ -40,18 +38,12 @@ func (r *router) addRoute(method string, patter string, handle HandleFunc) {
 
 	parts := parsePattern(patter)
 
-	//fmt.Println("parts:===", parts)
-
 	_, ok := r.roots[method]
-
-	//fmt.Println("r.roots[method]===", ok)
 
 	if !ok {
 		r.roots[method] = &node{}
 	}
 	r.roots[method].insert(patter, parts, 0)
-
-	//fmt.Printf("r.roots[%s]===%v\n", method, r.roots[method])
 
 	r.handlers[key] = handle
 }
@@ -75,8 +67,7 @@ func (r *router) getRoute(method string, path string) (*node,
 			}
 
 			if part[0] == '*' && len(part) > 1 {
-				params[part[1:]] = strings.Join(searchParts[index:],
-					"/")
+				params[part[1:]] = strings.Join(searchParts[index:], "/")
 				break
 			}
 		}
@@ -93,16 +84,13 @@ func (r *router) handle(c *Context) {
 		c.Params = params
 		key := c.Method + "-" + n.pattern
 
-		//c.handlers = append(c.handlers, r.handlers[key])
-		new(Pipeline).Send(c).Through(c.middlewares).Then(func(c *Context) {
-			fmt.Println(c.Request.URL)
+		new(Pipeline).Send(c).Through(c.handlers).Then(func(context *Context) {
+			r.handlers[key](c)
 		})
-		r.handlers[key](c)
+
 	} else {
-		//c.handlers = append(c.handlers, func(c *Context) {
 		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
-		//})
+
 	}
 
-	//c.Next()
 }
