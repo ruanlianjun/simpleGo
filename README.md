@@ -6,36 +6,38 @@
 package main
 
 import (
+	"github.com/ruanlianjun/simpleGo/simple"
 	"log"
-	"net/http"
-	"simpleGo/simple"
-	"simpleGo/simple/middleware"
 )
 
 func main() {
-	r := simple.New()
-	r.Use(middleware.StartLog())
-	v1 := r.Group("v1")
-	{
-		v1.GET("/demo", func(c *simple.Context) {
-			c.String(http.StatusOK, "%s", "v1 demo")
-		})
-		admin := v1.Group("admin")
-		admin.GET("login", func(c *simple.Context) {
-			c.String(http.StatusOK,
-				"%s",
-				"v1 v2 admin login")
-		})
-	}
 
-	v2 := r.Group("v2")
-	{
-		v2.GET("/demo", func(c *simple.Context) {
-			c.String(http.StatusOK, "%s", "v2 demo")
-		})
-	}
+	router := simple.New()
 
-	log.Panic(r.Run(":9098"))
+	v1 := router.Group("/v1")
+
+	v1.Middleware(func(c *simple.Context, next func(c *simple.Context)) {
+		c.Writer.Write([]byte("v1 middleware\n"))
+		next(c)
+	})
+
+	v1.GET("/test", func(c *simple.Context) {
+		c.Writer.Write([]byte("v1 test"))
+	})
+
+	v2 := router.Group("/v2")
+
+	v2.Middleware(func(c *simple.Context, next func(c *simple.Context)) {
+		next(c)
+		c.Writer.Write([]byte("v2 middleware\n"))
+	})
+
+	v2.GET("/test", func(c *simple.Context) {
+		c.Writer.Write([]byte("v2 test\n"))
+	})
+
+	log.Panic(router.Run(":9098"))
 }
+
 
 ```

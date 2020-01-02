@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+
 	router := simple.New()
 
 	v1 := router.Group("/v1")
